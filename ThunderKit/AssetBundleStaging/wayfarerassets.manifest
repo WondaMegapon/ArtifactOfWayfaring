@@ -1,0 +1,28 @@
+ManifestFileVersion: 0
+CRC: 956011354
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 562587fda069b67660eab20ffa960c21
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 0c4796944e0ea8154294359f68ecff05
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 1032072274, guid: 06dd3d5416bf43ea368cc39ff96e6d5a, type: 3}
+- Class: 114
+  Script: {fileID: -281164913, guid: 06dd3d5416bf43ea368cc39ff96e6d5a, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+Assets:
+- Assets/AssetBundle/Sprites/WayfaringActivated.png
+- Assets/AssetBundle/WayfarerContent.asset
+- Assets/AssetBundle/WayfarerDef.asset
+- Assets/AssetBundle/Sprites/Wayfaring.psd
+- Assets/AssetBundle/Sprites/WayfaringDeactivated.png
+Dependencies: []

@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 1352903181
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: wayfarerassets
+      Dependencies: {}
