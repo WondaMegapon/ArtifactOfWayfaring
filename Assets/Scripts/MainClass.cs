@@ -86,7 +86,6 @@ namespace Wonda.ArtifactOfWayfaring
                 if (currStageIndex > 0 && (currStageIndex + 1) % sceneListing.Count == 0) PopulateSceneList();
                 if (SceneCatalog.allStageSceneDefs.Contains(SceneCatalog.GetSceneDefForCurrentScene())) currStageIndex++;
                 Run.instance.nextStageScene = sceneListing[currStageIndex % (sceneListing.Count)];
-                Logger.LogInfo("Current Loop Count: " + Run.instance.loopClearCount);
                 return;
             }
             orig(self, choices);
