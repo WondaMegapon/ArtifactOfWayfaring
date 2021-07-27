@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: BepInExPack
   m_EditorClassIdentifier: 
   Data:
-  - {fileID: 114916551893241888}
-  identity: {fileID: 114916551893241888}
---- !u!114 &114916551893241888
+  - {fileID: 114096127434340492}
+  identity: {fileID: 114096127434340492}
+--- !u!114 &114096127434340492
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -35,5 +35,5 @@ MonoBehaviour:
   Icon: {fileID: 0}
   Description: Unified BepInEx all-in-one modding pack - plugin framework, detour
     library
-  Version: 3.0.48
+  Version: 5.4.9
   Dependencies: []
