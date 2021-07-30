@@ -29,7 +29,7 @@ namespace Wonda.ArtifactOfWayfaring
         // Cool info B)
         const string guid = "com.Wonda.ArtifactOfWayfaring";
         const string modName = "ArtifactOfWayfaring";
-        const string version = "1.0.0";
+        const string version = "1.0.2";
 
         // The Artifact~
         private ArtifactDef artiWayfaring;
@@ -38,8 +38,12 @@ namespace Wonda.ArtifactOfWayfaring
         private List<SceneDef> sceneListing = new List<SceneDef>();
         private int currStageIndex = 0;
 
+        // Config stuff
+        private WayfaringConfig _config;
+
         public void Awake()
         {
+            _config = new WayfaringConfig(Config);
             Assets.PopulateAssets();
             ContentPackProvider.Initialize();
             SetupArtifacts();
@@ -47,32 +51,49 @@ namespace Wonda.ArtifactOfWayfaring
             SetupLanguage();
         }
 
+        /// <summary>
+        /// Prepares Artifact variables for the mod to interface with.
+        /// </summary>
         private void SetupArtifacts()
         {
             artiWayfaring = Assets.mainAssetBundle.LoadAsset<ArtifactDef>("WayfarerDef");
         }
 
+        /// <summary>
+        /// Sets up any necessary LanguageAPI tokens.
+        /// </summary>
         private void SetupLanguage()
         {
             LanguageAPI.Add("WONDA_WAYFARING_NAME", "Artifact of Wayfaring");
-            LanguageAPI.Add("WONDA_WAYFARING_DESC", "Travel through every stage.");
+            LanguageAPI.Add("WONDA_WAYFARING_DESC", "Loops now consist of every possible stage.");
         }
 
+        /// <summary>
+        /// Adds hooks for the mod to leech off of.
+        /// </summary>
         private void SetupHooks()
         {
             On.RoR2.Run.Start += Run_Start;
             On.RoR2.Run.PickNextStageScene += Run_PickNextStageScene;
-        }
+            On.RoR2.Run.OnServerSceneChanged += Run_OnServerSceneChanged;
+            On.RoR2.BazaarController.SetUpSeerStations += BazaarController_SetUpSeerStations;
+        }        
 
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             if (RunArtifactManager.instance.IsArtifactEnabled(artiWayfaring.artifactIndex))
             {
                 Logger.LogInfo("Starting Run!");
+
+                // Filling sceneListing with our new stages.
                 PopulateSceneList();
                 Logger.LogInfo("Setting stages per loop!");
-                Run.stagesPerLoop = sceneListing.Count;
+
+                // Setting a loop to include all of the new stages.
+                if(_config.AdjustLoopCount) Run.stagesPerLoop = SceneCatalog.allStageSceneDefs.Count() - 1;
                 Logger.LogInfo("Setting next stage for first stage!");
+
+                // Resetting the index, in-case this is a new run.
                 currStageIndex = 0;
             }
             orig(self);
@@ -83,20 +104,100 @@ namespace Wonda.ArtifactOfWayfaring
             if (RunArtifactManager.instance.IsArtifactEnabled(artiWayfaring.artifactIndex))
             {
                 Logger.LogInfo("Setting next stage!");
+
+                // Repopulating our scene list if this is the last stage.
                 if (currStageIndex > 0 && (currStageIndex + 1) % sceneListing.Count == 0) PopulateSceneList();
-                if (SceneCatalog.allStageSceneDefs.Contains(SceneCatalog.GetSceneDefForCurrentScene())) currStageIndex++;
+
+                // Incrementing the stage index if the current scene is in our scene list.
+                if (CurrentSceneMatchesCurrentStage()) currStageIndex++;
+
+                // Setting the next stage.
                 Run.instance.nextStageScene = sceneListing[currStageIndex % (sceneListing.Count)];
                 return;
             }
             orig(self, choices);
         }
 
+        private void Run_OnServerSceneChanged(On.RoR2.Run.orig_OnServerSceneChanged orig, Run self, string sceneName)
+        {
+            orig(self, sceneName);
+            if (RunArtifactManager.instance.IsArtifactEnabled(artiWayfaring.artifactIndex))
+            {
+                // If there's no teleporter to set the scene, and this scene *is* in our loop.
+                if(CurrentSceneMatchesCurrentStage() && TeleporterInteraction.instance == null)
+                {
+                    // Picking the first scene in the catalog as our new scene. It doesn't really matter what goes in here.
+                    Run.instance.PickNextStageScene(new SceneDef[] { SceneCatalog.allStageSceneDefs.ToList().First() });
+                }
+            }
+        }
+
+        private void BazaarController_SetUpSeerStations(On.RoR2.BazaarController.orig_SetUpSeerStations orig, BazaarController self)
+        {
+            orig(self);
+            if (RunArtifactManager.instance.IsArtifactEnabled(artiWayfaring.artifactIndex) && _config.RemoveSeerStations)
+            {
+                foreach (SeerStationController seerStationController in self.seerStations)
+                {
+                    // Removing the seer if it contains a stage in our loop.
+                    if (sceneListing.Contains(SceneCatalog.GetSceneDef(seerStationController.NetworktargetSceneDefIndex))) seerStationController.GetComponent<PurchaseInteraction>().SetAvailable(false);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates sceneListing's contents. 
+        /// </summary>
         private void PopulateSceneList()
         {
             Logger.LogInfo("Starting Populate!");
+
+            // A random number to drive everything! (TODO: Replace this with Ror2's seed system?)
             System.Random r = new System.Random();
-            sceneListing = SceneCatalog.allStageSceneDefs.OrderBy(x => r.Next()).OrderBy(wh => wh.stageOrder).ToList();
+
+            // Grabbing the current stages in the game.
+            sceneListing = SceneCatalog.allStageSceneDefs.ToList();
+
+            // Adding in our additional stages.
+            if (r.NextDouble() <= _config.GoldshoresSpawnChance) sceneListing.Add(PrepareSceneDef("goldshores", _config.GoldshoresStageOrder));
+            if (r.NextDouble() <= _config.VoidfieldsSpawnChance) sceneListing.Add(PrepareSceneDef("arena", _config.VoidfieldsStageOrder));
+
+            // Shuffling the list, then ordering the list by stage order.
+            sceneListing = sceneListing.OrderBy(x => r.Next()).OrderBy(wh => wh.stageOrder).ToList();
+
+            // Removing Commencement, as it'll cause conflicts.
             sceneListing.Remove(sceneListing.Find(wh => wh.nameToken == SceneCatalog.GetSceneDefFromSceneName("moon2").nameToken));
+
+            foreach(var item in sceneListing)
+            {
+                Logger.LogInfo(item.nameToken + " chosen!");
+            }
+        }
+
+        /// <summary>
+        /// Returns a SceneDef that has been re-ordered for Wayfaring's shuffle.
+        /// </summary>
+        /// <param name="name">The name of the scene.</param>
+        /// <param name="stageOrder">The order in which the scene will appear.</param>
+        /// <returns>A new SceneDef with the modified scene.</returns>
+        private SceneDef PrepareSceneDef(string name, int stageOrder)
+        {
+            SceneDef sceneDef = SceneCatalog.GetSceneDefFromSceneName(name);
+            if(sceneDef == null)
+            {
+                Logger.LogError("Null SceneDef! Returning Null!");
+                return null;
+            }
+            sceneDef.stageOrder = stageOrder;
+            return sceneDef;
+        }
+
+        /// <summary>
+        /// Returns true if the current stage matches sceneListing's current stage.
+        /// </summary>
+        private bool CurrentSceneMatchesCurrentStage()
+        {
+            return sceneListing[currStageIndex].cachedName == SceneCatalog.GetSceneDefForCurrentScene().cachedName;
         }
     }
 

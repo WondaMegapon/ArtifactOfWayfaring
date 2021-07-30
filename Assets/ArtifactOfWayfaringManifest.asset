@@ -75,9 +75,9 @@ MonoBehaviour:
   Author: Wonda
   Name: ArtifactOfWayfaring
   Icon: {fileID: 2800000, guid: 7107f3879a07c8c47816115c6b1639d2, type: 3}
-  Description: Adds an artifact that allows players to play through every stage in
-    a single loop.
-  Version: 1.0.0
+  Description: Adds an artifact that makes all ten stage variants appear in a loop,
+    allowing the player to visit every stage before returning to the first.
+  Version: 1.0.2
   Dependencies:
   - {fileID: 11400000, guid: 6893422731aa6d67012f5f4d8209c304, type: 2}
   - {fileID: 11400000, guid: c8c954e10545f6cd0045de066bc4846b, type: 2}
