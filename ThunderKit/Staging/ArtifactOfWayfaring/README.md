@@ -23,6 +23,8 @@ Thanks to Contra for suggesting the mod in the first place.
 
 # Changelog
 
+1.0.3 - Hotfixed ArguementOutOfRange bug.
+
 1.0.2 - Added support for Gilded Coast and Void Fields to be in the loop. Updated description.
 
 1.0.1 - Added config options. Disabled Lunar Seers leading to stages that are in the main loop. Updated description.

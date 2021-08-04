@@ -29,7 +29,7 @@ namespace Wonda.ArtifactOfWayfaring
         // Cool info B)
         const string guid = "com.Wonda.ArtifactOfWayfaring";
         const string modName = "ArtifactOfWayfaring";
-        const string version = "1.0.2";
+        const string version = "1.0.3";
 
         // The Artifact~
         private ArtifactDef artiWayfaring;
@@ -123,12 +123,7 @@ namespace Wonda.ArtifactOfWayfaring
             orig(self, sceneName);
             if (RunArtifactManager.instance.IsArtifactEnabled(artiWayfaring.artifactIndex))
             {
-                // If there's no teleporter to set the scene, and this scene *is* in our loop.
-                if(CurrentSceneMatchesCurrentStage() && TeleporterInteraction.instance == null)
-                {
-                    // Picking the first scene in the catalog as our new scene. It doesn't really matter what goes in here.
-                    Run.instance.PickNextStageScene(new SceneDef[] { SceneCatalog.allStageSceneDefs.ToList().First() });
-                }
+                Invoke("TestAndSetTeleporterlessStage", 2f);
             }
         }
 
@@ -175,6 +170,20 @@ namespace Wonda.ArtifactOfWayfaring
         }
 
         /// <summary>
+        /// Runs PickNextStageScene if there is no teleporter on the current stage.
+        /// </summary>
+        private void TestAndSetTeleporterlessStage()
+        {
+            // If there's no teleporter to set the scene, and this scene *is* in our loop.
+            if (CurrentSceneMatchesCurrentStage() && TeleporterInteraction.instance == null)
+            {
+                Logger.LogInfo("Scene has no stage! Picking next stage anyway.");
+                // Picking the first scene in the catalog as our new scene. It doesn't really matter what goes in here.
+                Run.instance.PickNextStageScene(new SceneDef[] { SceneCatalog.allStageSceneDefs.ToList().First() });
+            }
+        }
+
+        /// <summary>
         /// Returns a SceneDef that has been re-ordered for Wayfaring's shuffle.
         /// </summary>
         /// <param name="name">The name of the scene.</param>
@@ -197,7 +206,9 @@ namespace Wonda.ArtifactOfWayfaring
         /// </summary>
         private bool CurrentSceneMatchesCurrentStage()
         {
-            return sceneListing[currStageIndex].cachedName == SceneCatalog.GetSceneDefForCurrentScene().cachedName;
+            if(sceneListing[currStageIndex % sceneListing.Count] && SceneCatalog.GetSceneDefForCurrentScene())
+                return sceneListing[currStageIndex % sceneListing.Count].cachedName == SceneCatalog.GetSceneDefForCurrentScene().cachedName;
+            return false;
         }
     }
 
